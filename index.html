@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rotoplas + Genesys: Orquestación Inteligente</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --g-orange: #FF4F1F;
+      --g-navy: #23395D;
+      --g-teal: #00AE9E;
+      --g-gray: #718096;
+      --border: rgba(35, 57, 93, 0.08);
+      --bg: #F8FAFC;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg);
+      color: var(--g-navy);
+    }
+
+    /* Tooltip */
+    #linkPreview {
+      position: absolute; display: none; background: white; border-radius: 8px;
+      padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 9999;
+      width: 250px; font-size: 11px; border: 1px solid var(--border); line-height: 1.4;
+    }
+
+    .shell { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+    .brand-area { display: flex; align-items: center; gap: 15px; }
+    .genesys-logo {
+      width: 42px; height: 42px; background: var(--g-orange);
+      border-radius: 10px; display: grid; place-items: center;
+    }
+    .brand-text h1 { font-size: 18px; margin: 0; font-weight: 900; color: var(--g-navy); }
+    .brand-text p { font-size: 10px; margin: 0; color: var(--g-orange); font-weight: 700; letter-spacing: 1.5px; }
+
+    /* Nav & Progress */
+    .nav-controls { display: flex; gap: 10px; align-items: center; }
+    .btn {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: white; cursor: pointer; font-weight: 700; font-size: 12px; color: var(--g-navy);
+    }
+    .btn.primary { background: var(--g-navy); color: white; border: none; }
+    
+    .progress-container { width: 100%; height: 4px; background: #E2E8F0; border-radius: 10px; margin: 15px 0 25px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: var(--g-orange); transition: width 0.4s ease; }
+
+    /* Slides */
+    .slide {
+      background: white; border-radius: 16px; padding: 40px 40px 20px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.03); min-height: 620px;
+      display: none; border: 1px solid var(--border); position: relative;
+    }
+    .slide.active { display: flex; flex-direction: column; }
+
+    .slide-content { flex: 1; }
+
+    /* Typography */
+    .kicker { font-size: 11px; font-weight: 900; color: var(--g-teal); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+    h2 { font-size: 30px; margin: 0 0 10px 0; font-weight: 900; }
+    .subtitle { font-size: 15px; color: var(--g-gray); margin-bottom: 30px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+    /* Lists */
+    .minimal-list { list-style: none; padding: 0; margin: 0; }
+    .minimal-list li {
+      padding: 10px 0; border-bottom: 1px solid #F1F5F9;
+      font-size: 14px; display: flex; gap: 10px; line-height: 1.4;
+    }
+    .minimal-list li::before { content: "•"; color: var(--g-orange); font-weight: bold; }
+
+    /* Links */
+    .clean-link { color: var(--g-teal); text-decoration: none; font-weight: 600; border-bottom: 1px solid transparent; }
+    .clean-link:hover { border-bottom: 1px solid var(--g-teal); }
+
+    /* KPI Trend */
+    .trend { font-weight: 900; }
+    .up { color: #10B981; } .down { color: #F43F5E; }
+
+    /* Charts */
+    .chart-box { height: 250px; width: 100%; margin-top: 10px; }
+    .note { margin-top: 15px; padding: 12px; border-left: 3px solid var(--g-orange); background: #FFF7F5; font-size: 13px; }
+
+    /* FOOTER DISCLAIMER */
+    .slide-footer {
+      margin-top: 30px; padding-top: 15px; border-top: 1px solid #F1F5F9;
+      font-size: 10px; color: #94A3B8; line-height: 1.5;
+    }
+    .slide-footer strong { color: var(--g-navy); }
+  </style>
+</head>
+<body>
+
+<div id="linkPreview"></div>
+
+<div class="shell">
+  <div class="header">
+    <div class="brand-area">
+      <div>
+        <img src="https://play-lh.googleusercontent.com/ooeCNsdX_uVYEH0tVsP6tCs-M1r8l_fcL90lEe8BjRBq1RcASP1qbxqSsmLAoL0SDoT1" alt="Logo" style="width:70px; height:auto;">
+      </div>
+      <div class="brand-text">
+        <h1>Evolución Estratégica Rotoplas</h1>
+        <p>POWERED BY GENESYS CLOUD</p>
+      </div>
+    </div>
+    <div class="nav-controls">
+      <button class="btn" id="prevBtn">Anterior</button>
+      <button class="btn primary" id="nextBtn">Siguiente</button>
+      <span id="slideCounter" style="font-size:11px; font-weight:900; margin-left:10px;">1 / 14</span>
+    </div>
+  </div>
+
+  <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+
+  <div id="stage">
+    <script>
+      const slidesData = [
+        { kicker: "Estrategia", title: "Partimos de su Estrategia", sub: "Análisis basado en el <a href='https://rotoplas.com/inversionistas/rtp_resources/reporte-anual/2024/informe-anual-rotoplas-2024.pdf' class='clean-link preview-link' data-desc='Reporte 2024: Enfoque en servicios, IoT y meta de NPS 80.'>Informe Anual 2024</a>.", list: ["Escalar negocios de servicios", "Fortalecer e-commerce y omnicanalidad", "Integrar IoT e IA", "Mejorar margen EBITDA", "Optimizar flujo de caja"], note: "La IA no debe ser vista como una tendencia para Rotoplas. Es una prioridad estratégica.", chart: "chart1" },
+        { kicker: "Base Digital", title: "Base Digital Ya Construida", sub: "Rotoplas ya opera como empresa digital industrial. Es el momento del salto proactivo.", list: ["Plataformas B2B y B2B2C activas", "Seguimiento en tiempo real", "IA aplicada a servicio al cliente", "Manufactura SMART", "Integración IoT"], note: "Orquestación = Datos + Intención → Acciones Inteligentes" },
+        { kicker: "Modelo", title: "Niveles de Orquestación", sub: "Marco de madurez para la experiencia del cliente.", list: ["Nivel 1: Digital (Reactivo)", "Nivel 2: Multicanal (Conectado)", "Nivel 3: IA Integrada (Asistido)", "Nivel 4: Orquestación Predictiva"], note: "La IA nos ayuda a decidir el siguiente mejor paso.", chart: "chart3" },
+        { kicker: "Necesidad", title: "¿Por Qué Evolucionar?", sub: "Evitar que la complejidad de servicios e IoT degrade el margen.", list: ["🛡️ Protección de margen operativo", "🛒 Incremento en conversión digital", "⭐ Mejora del NPS <span class='trend up'>↑ 80</span>", "🔻 Reducción del Cost-to-serve"], note: "Sin evolución, la fragmentación presiona los resultados financieros." },
+        { kicker: "Caso 1", title: "Predictive Engagement", sub: "Activación proactiva en el funnel de ventas.", list: ["Conversión digital <span class='trend up'>↑ 20%</span>", "Abandono carrito <span class='trend down'>↓ 20%</span>", "Tiempo improductivo <span class='trend down'>↓ 72%</span>"], note: "Caso HSBC: USD 60M en valor incremental proyectado.", chart: "chart5" },
+        { kicker: "Caso 2", title: "Virtual Agents Integrados", sub: "Autoservicio con integración a sistemas core.", list: ["Contención de contactos <span class='trend up'>↑ 75%</span>", "Costo por contacto <span class='trend down'>↓ 40%</span>", "Disponibilidad total 24/7"], note: "Eficiencia: 157,000 horas ahorradas en 3 años.", chart: "chart6" },
+        { kicker: "Caso 3", title: "Agent Copilot", sub: "Asistencia en tiempo real para elevar el FCR.", list: ["Resumen automático de interacciones", "Sugerencias de IA en tiempo real", "Resolución Primer Contacto <span class='trend up'>↑ 18%</span>"], note: "Impacto: -15% AHT y reducción en tiempos de capacitación." },
+        { kicker: "Caso 4", title: "Predictive Routing", sub: "Asignación inteligente por probabilidad de éxito.", list: ["Matching Agente-Cliente por IA", "Modelos Machine Learning nativos", "Satisfacción empleado <span class='trend up'>↑ 14%</span>"], note: "Asegura que el cliente correcto hable con el experto correcto." },
+        { kicker: "Eficiencia", title: "Workforce AI", sub: "Forecasting avanzado y gestión de capital humano.", list: ["Optimización de turnos matemática", "Detección de anomalías en vivo", "+25 modelos de previsión"], note: "Control del OPEX laboral sin sacrificar la calidad de servicio." },
+        { kicker: "Gobernanza", title: "IA Gobernada", sub: "Entorno empresarial seguro para la Inteligencia Artificial.", list: ["Framework de IA Responsable", "Modelo híbrido (LLM + Datos seguros)", "Cumplimiento y Auditoría nativa"], note: "Productividad masiva con seguridad de grado empresarial." },
+        { kicker: "Impacto", title: "Impacto Consolidado", sub: "Resultados financieros de la orquestación.", list: ["Reducción OPEX <span class='trend down'>↓ 40%</span>", "ROI estimado: 9 meses", "Escalabilidad operativa inmediata"], note: "Transformación del centro de costo en un motor de valor.", chart: "chart11" },
+        { kicker: "Timing", title: "¿Por Qué Ahora?", sub: "Del año de inversión al año de captura de valor.", list: ["2025: Año estratégico de resultados", "Madurez del ecosistema IoT", "Presión competitiva omnicanal"], note: "Esperar implica ceder terreno en la captura de datos y clientes." },
+        { kicker: "Partner", title: "¿Por Qué Genesys?", sub: "Liderazgo global en experiencia del cliente.", list: ["Evolución sin reemplazo de tecnología", "Líder en el Cuadrante de Gartner", "IA integrada nativamente"], note: "Primer Sprint: 2 journeys prioritarios para medir el uplift." },
+        { kicker: "Cierre", title: "Siguientes Pasos", sub: "Camino hacia el NPS 80 y eficiencia máxima.", list: ["Selección de journeys críticos", "Definición de baseline de KPIs", "Diseño de piloto de orquestación"], note: "La conversación no es tecnológica, es sobre valor de negocio." }
+      ];
+
+      const stage = document.getElementById('stage');
+      const disclaimer = `
+        <div class="slide-footer">
+          <strong>© 2026 Análisis Estratégico.</strong> Creado para Rotoplas en colaboración con Genesys.<br>
+          <em>Disclaimer: Este análisis se ha elaborado utilizando información disponible públicamente en los sitios web oficiales de Rotoplas y Genesys, así como datos de mercado de fuentes de terceros. La intención es puramente ilustrativa para demostrar el potencial de la alianza estratégica.</em>
+        </div>`;
+
+      slidesData.forEach((data, i) => {
+        const section = document.createElement('section');
+        section.className = `slide ${i === 0 ? 'active' : ''}`;
+        section.innerHTML = `
+          <div class="slide-content">
+            <div class="kicker">${data.kicker}</div>
+            <h2>${data.title}</h2>
+            <p class="subtitle">${data.sub}</p>
+            <div class="grid">
+              <div class="card">
+                <ul class="minimal-list">${data.list.map(li => `<li>${li}</li>`).join('')}</ul>
+              </div>
+              <div class="card">
+                ${data.chart ? `<div class="chart-box"><canvas id="${data.chart}"></canvas></div>` : ''}
+                <div class="note">${data.note}</div>
+              </div>
+            </div>
+          </div>
+          ${disclaimer}
+        `;
+        stage.appendChild(section);
+      });
+    </script>
+  </div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const counter = document.getElementById("slideCounter");
+  const progressBar = document.getElementById("progressBar");
+  let idx = 0;
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle("active", i === idx));
+    counter.textContent = `${idx + 1} / ${slides.length}`;
+    progressBar.style.width = `${((idx + 1) / slides.length) * 100}%`;
+    initCharts(idx);
+    window.scrollTo(0,0);
+  }
+
+  document.getElementById("nextBtn").onclick = () => { if(idx < slides.length-1) { idx++; render(); } };
+  document.getElementById("prevBtn").onclick = () => { if(idx > 0) { idx--; render(); } };
+
+  function initCharts(n) {
+    const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+    if(n === 0 && document.getElementById('chart1')) {
+      new Chart(document.getElementById('chart1'), { type: 'bar', data: { labels: ['NPS Meta', 'Eficiencia', 'Crecimiento'], datasets: [{ data: [80, 70, 85], backgroundColor: ['#FF4F1F', '#23395D', '#00AE9E'] }] }, options: opts });
+    }
+    if(n === 2 && document.getElementById('chart3')) {
+      new Chart(document.getElementById('chart3'), { type: 'radar', data: { labels: ['Predictivo', 'Canales', 'Datos', 'IA', 'IoT'], datasets: [{ label: 'Actual', data: [40, 80, 70, 50, 90], borderColor: '#23395D' }, { label: 'Meta', data: [95, 100, 95, 95, 100], borderColor: '#FF4F1F' }] }, options: opts });
+    }
+    if(n === 4 && document.getElementById('chart5')) {
+      new Chart(document.getElementById('chart5'), { type: 'bar', data: { labels: ['Tráfico', 'Lead', 'Chat', 'Venta'], datasets: [{ data: [1000, 600, 400, 250], backgroundColor: ['#23395D', '#3B90AA', '#00AE9E', '#FF4F1F'] }] }, options: { ...opts, indexAxis: 'y' } });
+    }
+    if(n === 5 && document.getElementById('chart6')) {
+      new Chart(document.getElementById('chart6'), { type: 'doughnut', data: { labels: ['IA', 'Humano'], datasets: [{ data: [75, 25], backgroundColor: ['#00AE9E', '#E2E8F0'] }] }, options: opts });
+    }
+    if(n === 10 && document.getElementById('chart11')) {
+      new Chart(document.getElementById('chart11'), { type: 'bar', data: { labels: ['Actual', 'Con IA'], datasets: [{ data: [100, 60], backgroundColor: ['#CBD5E0', '#FF4F1F'] }] }, options: opts });
+    }
+  }
+
+  // Tooltip
+  const preview = document.getElementById('linkPreview');
+  document.addEventListener('mouseover', (e) => {
+    if(e.target.classList.contains('preview-link')) {
+      preview.innerHTML = `<strong>Contexto:</strong><br>${e.target.getAttribute('data-desc')}`;
+      preview.style.display = 'block'; preview.style.left = e.pageX + 10 + 'px'; preview.style.top = e.pageY + 10 + 'px';
+    }
+  });
+  document.addEventListener('mouseout', (e) => { if(e.target.classList.contains('preview-link')) preview.style.display = 'none'; });
+
+  render();
+</script>
+
+</body>
+</html>
